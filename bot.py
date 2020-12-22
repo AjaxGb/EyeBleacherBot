@@ -25,6 +25,8 @@ TRIGGERS = [
     "pour me some bleach",
     "eyebleach needed",
     "who has the bleach",
+    "eyebleach please",
+    "gimme the bleach",
 ]
 
 
