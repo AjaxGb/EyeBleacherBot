@@ -1,1 +1,0 @@
-"\n*Beep Boop! I'm a bot! I'm active in* [*These*](https://www.reddit.com/user/EyeBleacherBot/comments/gy47ws/subs_im_currently_active_in/) *subreddits! Please contact* [*u/cyanidesuppository*](https://reddit.com/user/cyanidesuppository) *with any issues or suggestions.* [*Github*](https://github.com/getcake/EyeBleacherBot) "
