@@ -82,7 +82,7 @@ def keep_score(reddit):
     """
     keep track of all comment scores and deletes ones under a certain threshold
     """
-    for comment in reddit.redditor("eyebleacherbot_test").stream.comments():
+    for comment in reddit.redditor("eyebleacherbot").stream.comments():
         try:
 
             score = comment.score
