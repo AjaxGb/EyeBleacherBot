@@ -1,36 +1,39 @@
+from threading import Thread
+from time import sleep
+import functools
+import traceback
 import random
 import config
 import praw
-import time
 
 TRIGGERS = [
-    "unsee juice",
+    "!eyebleacherbot",
     "i need bleach",
-    "who's got the bleach",
-    "where's the bleach",
+    "unsee juice",
+    "the bleach",
     "bleach my eyes",
     "bleach please",
-    "get the bleach",
     "i need eyebleach",
     "give me bleach",
-    "give me the bleach",
-    "i need the bleach",
     "i need eye bleach",
-    "wheres the bleach",
     "i need some bleach",
-    "who's got the bleach",
+    "i need some eye bleach",
     "need eye bleach",
-    "have eyebleach",
-    "pour the bleach",
-    "pour me some bleach",
-    "eyebleach needed",
-    "who has the bleach",
-    "eyebleach please",
-    "gimme the bleach",
+    "any bleach",
+    "bleach my eyes",
+    "eyebleach bot",
+    "day to have eyes",
+    "unsee bot",
+    "bleach bot",
+    "r/eyebleach",
+    "juice of unseeing",
 ]
 
 
 def authenticate():
+    """
+    authenticate the bot
+    """
     reddit = praw.Reddit(
         username=config.username,
         password=config.password,
@@ -41,92 +44,106 @@ def authenticate():
     return reddit
 
 
-def getReplies():
-    with open("replies.txt", "r") as file:
-        cr = file.read()
-        cr2 = list(cr)
-        cr2 = cr2
-        cr = cr
-        cr = cr.split("\n")
-        cr = filter(None, cr)
-    return cr
+def send_bleach(method):
+    """
+    reply with randomly selected bleach given a certain method
+    """
+    try:
+
+        with open("bleach.txt") as b:
+            bl = b.readlines()
+            msg = " \n*^(beep)* *^(boop! I'm a bot! Please contact)* [*^(u/cyanidesuppository)*](https://reddit.com/user/cyanidesuppository) *^(with)* *^(any)* *^(issues)* *^(or)* *^(suggestions!) *^(|)* [*^(Github)*](https://github.com/getcake/eyebleacherbot)*"
+            bleach = random.choice(bl) + "\n" + msg
+            method.reply(bleach)
+
+        return bleach
+
+    except Exception:
+        print(traceback.format_exc())
 
 
-def run(reddit, cr2):
+def get_user_mentions(reddit):
+    """
+    stream generator for unread inbox mentions
+    """
+    for mention in praw.models.util.stream_generator(reddit.inbox.unread):
+        try:
+            if mention.body.lower() == "u/eyebleacherbot":
+                print("Bot called by username mention")
+                send_bleach(mention)
+                mention.mark_read()
+                print("Bot responded to username mention\n")
 
-    with open("bleach.txt") as b, open("subs.txt", "r") as subs, open(
-        "footer.txt", "r"
-    ) as footer:
+        except Exception:
+            print(traceback.format_exc())
 
-        a = b.readlines()
 
-    for comment in reddit.subreddit(subs).stream.comments(skip_existing=True):
+def keep_score(reddit):
+    """
+    keep track of all comment scores and deletes ones under a certain threshold
+    """
+    for comment in reddit.redditor("eyebleacherbot_test").stream.comments():
+        try:
 
-        if (
-            "!eyebleacherbot" in comment.body.lower()
-            or "u/eyebleacherbot" in comment.body.lower()
-            and comment.id not in cr2
-            and not comment.saved
-        ):
-            try:
+            score = comment.score
+            threshold = - 1
+            if score < threshold:
+                comment.delete()
+                print(f"Delted with a score of {score}\n")
 
-                print("Bot called")
+        except Exception:
+            print(traceback.format_exc())
+
+
+def be_good(reddit):
+    """
+    delete comments that have recieved a bad vote
+    """
+    for reply in praw.models.util.stream_generator(reddit.inbox.comment_replies):
+        try:
+
+            og = reply.parent()
+            author = reply.author
+            if "bad bot" in reply.body.lower():
+                print("found bad vote")
+                og.delete()
+                print(f"Comment delted because of bad vote by u/{author}\n")
+
+        except Exception:
+            print(traceback.format_exc())
+
+
+def search_triggers(reddit):
+    """
+    search for any occurance of a trigger in the list "TRIGGERS"
+    """
+    for comment in reddit.subreddit("subs go here").stream.comments(
+        skip_existing=True
+    ):
+        try:
+
+            if any(e in comment.body.lower() for e in TRIGGERS):
+                print("Bot called by trigger")
                 comment.save()
-                comment.reply(random.choice(a) + "\n" + footer)
-                print("Bot replied")
-                list(cr2).append(comment.id)
+                send_bleach(comment)
+                print("Bot replied to trigger\n")
 
-                with open("replies.txt", "a") as file:
-                    file.write(comment.id + "\n")
+        except Exception:
+            print(traceback.format_exc())
 
-            except Exception as e:
-                print(e)
-                time.sleep(30)
 
-        if (
-            any(e in comment.body.lower() for e in TRIGGERS)
-            and comment.id not in cr2
-            and not comment.saved
-        ):
+if __name__ == "__main__":
+    try:
+        reddit = authenticate()
+        Thread(target=functools.partial(search_triggers, reddit)).start()
+        print("[*]  Searching for triggers")
+        Thread(target=functools.partial(get_user_mentions, reddit)).start()
+        print("[*]  Getting username mentions")
+        Thread(target=functools.partial(be_good, reddit)).start()
+        print("[*]  Being good")
+        Thread(target=functools.partial(keep_score, reddit)).start()
+        print("[*]  Keeping score\n")
 
-            try:
-
-                print("Bot called")
-                comment.save()
-                comment.reply(random.choice(a) + footer)
-                print("Bot replied")
-                list(cr2).append(comment.id)
-
-                with open("replies.txt", "a") as file:
-                    file.write(comment.id + "\n")
-
-            except Exception as e:
-                print(e)
-                time.sleep(30)
-
-        elif (
-            "[nsfl]" in comment.body.lower()
-            and comment.id not in cr2
-            and not comment.saved
-        ):
-            try:
-
-                print("Bot called")
-                comment.save()
-                comment.reply(
-                    "*Not Safe for Life content detected!*"
-                    + "\n\n"
-                    + random.choice(a)
-                    + footer
-                )
-                print("Bot replied")
-                list(cr2).append(comment.id)
-
-                with open("replies.txt", "a") as file:
-                    file.write(comment.id + "\n")
-
-            except Exception as e:
-                print(e)
-                time.sleep(30)
-
-    time.sleep(60)
+    except Exception:
+        print(traceback.format_exc())
+        sleep(30)
