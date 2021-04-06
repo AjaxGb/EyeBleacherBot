@@ -1,10 +1,12 @@
 from threading import Thread
 from time import sleep
+from random import choice
 import functools
 import traceback
-import random
+import logging
 import config
 import praw
+import json
 
 TRIGGERS = [
     "!eyebleacherbot",
@@ -44,6 +46,21 @@ def authenticate():
     return reddit
 
 
+def log(message):
+    """
+    log all comments deleted for a bad vote or score   
+    """
+    logging.basicConfig(level=logging.INFO, filename='bot.log', format='%(asctime)s %(levelname)s:%(message)s')
+    
+    try:
+
+        logging.info(message)
+
+    except Exception:
+        print(traceback.format_exc())
+
+               
+
 def send_bleach(method):
     """
     reply with randomly selected bleach given a certain method
@@ -53,7 +70,7 @@ def send_bleach(method):
         with open("bleach.txt") as b:
             bl = b.readlines()
             msg = " \n*^(beep)* *^(boop! I'm a bot! Please contact)* [*^(u/cyanidesuppository)*](https://reddit.com/user/cyanidesuppository) *^(with)* *^(any)* *^(issues)* *^(or)* *^(suggestions!) *^(|)* [*^(Github)*](https://github.com/getcake/eyebleacherbot)*"
-            bleach = random.choice(bl) + "\n" + msg
+            bleach = choice(bl) + "\n" + msg
             method.reply(bleach)
 
         return bleach
@@ -68,7 +85,8 @@ def get_user_mentions(reddit):
     """
     for mention in praw.models.util.stream_generator(reddit.inbox.unread):
         try:
-            if mention.body.lower() == "u/eyebleacherbot":
+
+            if "u/eyebleacherbot" in mention.body.lower():
                 print("Bot called by username mention")
                 send_bleach(mention)
                 mention.mark_read()
@@ -89,7 +107,8 @@ def keep_score(reddit):
             threshold = - 1
             if score < threshold:
                 comment.delete()
-                print(f"Delted with a score of {score}\n")
+                print(f"Comment deleted at threshold: {threshold}\n")
+                log(message=f'Comment was deleted for being under threshold: {threshold}')
 
         except Exception:
             print(traceback.format_exc())
@@ -104,10 +123,13 @@ def be_good(reddit):
 
             og = reply.parent()
             author = reply.author
-            if "bad bot" in reply.body.lower():
-                print("found bad vote")
+            bad_vote = 'bad bot'
+            bad_comment = reply.body
+            if bad_vote in bad_comment.lower():
+                print("Found bad vote")
                 og.delete()
-                print(f"Comment delted because of bad vote by u/{author}\n")
+                print(f'Comment was delted because of bad vote by u/{author} [COMMENT]: "{bad_comment}" ')
+                log(message=f'Comment was delted because of bad vote by u/{author} [COMMENT]: "{bad_comment}" ')
 
         except Exception:
             print(traceback.format_exc())
@@ -146,4 +168,5 @@ if __name__ == "__main__":
 
     except Exception:
         print(traceback.format_exc())
+        logging.error(traceback.format_exc())
         sleep(30)
