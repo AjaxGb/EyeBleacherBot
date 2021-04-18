@@ -1,5 +1,5 @@
 # EyeBleacherBot
-A Reddit bot that responds with a link to some [eyebleach](https://www.urbandictionary.com/define.php?term=eye+bleach) when called.
+A [Reddit](https://reddit.com/user/eyebleacherbot) bot that responds with a link to some [eyebleach](https://www.urbandictionary.com/define.php?term=eye+bleach) when called.
 
 ![Eyebleach](https://i.imgur.com/JvwRSB6.jpeg)
 
