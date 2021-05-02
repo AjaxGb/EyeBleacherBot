@@ -46,7 +46,7 @@ def authenticate():
     return reddit
 
 
-def log(message):
+def log(case, message):
     """
     log all comments deleted for a bad vote or score   
     """
@@ -54,10 +54,18 @@ def log(message):
     
     try:
 
-        logging.info(message)
+        if case == 'score':
+            logging.info(message)
+            
+        
+        elif case == 'bad_vote':
+            logging.info(message)
 
     except Exception:
         print(traceback.format_exc())
+        sleep(2)
+        # logging.error(traceback.format_exc())
+
 
                
 
@@ -77,6 +85,8 @@ def send_bleach(method):
 
     except Exception:
         print(traceback.format_exc())
+        sleep(2)
+        pass
 
 
 def get_user_mentions(reddit):
@@ -85,7 +95,6 @@ def get_user_mentions(reddit):
     """
     for mention in praw.models.util.stream_generator(reddit.inbox.unread):
         try:
-
             if "u/eyebleacherbot" in mention.body.lower():
                 print("Bot called by username mention")
                 send_bleach(mention)
@@ -94,7 +103,8 @@ def get_user_mentions(reddit):
 
         except Exception:
             print(traceback.format_exc())
-
+            sleep(2)
+            pass
 
 def keep_score(reddit):
     """
@@ -104,14 +114,15 @@ def keep_score(reddit):
         try:
 
             score = comment.score
-            threshold = - 1
+            threshold = -1
             if score < threshold:
                 comment.delete()
                 print(f"Comment deleted at threshold: {threshold}\n")
-                log(message=f'Comment was deleted for being under threshold: {threshold}')
+                log(case='score', message=f'Comment was deleted for being under threshold: {threshold}')
 
         except Exception:
             print(traceback.format_exc())
+            pass
 
 
 def be_good(reddit):
@@ -129,19 +140,21 @@ def be_good(reddit):
                 print("Found bad vote")
                 og.delete()
                 print(f'Comment was delted because of bad vote by u/{author} [COMMENT]: "{bad_comment}" ')
-                log(message=f'Comment was delted because of bad vote by u/{author} [COMMENT]: "{bad_comment}" ')
+                log(case='bad_vote', message=f'Comment was delted because of bad vote by u/{author} [COMMENT]: "{bad_comment}" ')
 
         except Exception:
             print(traceback.format_exc())
+            sleep(2)
+            pass
 
 
 def search_triggers(reddit):
     """
     search for any occurance of a trigger in the list "TRIGGERS"
+    
     """
-    for comment in reddit.subreddit("subs go here").stream.comments(
-        skip_existing=True
-    ):
+    # for comment in reddit.subreddit("u_eyebleacherbot_test").stream.comments(skip_existing=True):
+    for comment in reddit.subreddit("nottheonion+formuladank+roastme+hololive+atbge+fellowkids+BikiniBottomTwitter+bonehurtingjuice+apexlegends+boomerhentai+hmmm+norules+meme+fnafcringe+gachacringeedits+fortnitebr+badwomensanatomy+greentext++GachaLifeCringe+goodanimemes+NoahGetTheBoat+MakeMeSuffer+PrequelMemes+WastedGachaTalent+awfuleverything+trashy+Cursed_Images+FiftyFifty+NoahGetTheDeathStar+u_EyeBleacherBot+MakeMeSufferMore+woooosh+TikTokCringe+gachaclubcringe+harrypotter+dontputyourdickinthat+sadcringe+gocommitdie+hornyjail+gachagaming+iamverybadass+iamverysmart").stream.comments(skip_existing=True):
         try:
 
             if any(e in comment.body.lower() for e in TRIGGERS):
@@ -149,24 +162,55 @@ def search_triggers(reddit):
                 comment.save()
                 send_bleach(comment)
                 print("Bot replied to trigger\n")
+                sleep(2)
 
         except Exception:
             print(traceback.format_exc())
+            sleep(5)
+            pass
 
 
-if __name__ == "__main__":
+
+
+if __name__ == '__main__':
+
+
     try:
+
+
         reddit = authenticate()
-        Thread(target=functools.partial(search_triggers, reddit)).start()
+
+        
+        t1 = Thread(target=functools.partial(search_triggers, reddit))
         print("[*]  Searching for triggers")
-        Thread(target=functools.partial(get_user_mentions, reddit)).start()
+        t2 = Thread(target=functools.partial(get_user_mentions, reddit))
         print("[*]  Getting username mentions")
-        Thread(target=functools.partial(be_good, reddit)).start()
+        t3 = Thread(target=functools.partial(be_good, reddit))
         print("[*]  Being good")
-        Thread(target=functools.partial(keep_score, reddit)).start()
+        t4 = Thread(target=functools.partial(keep_score, reddit))
         print("[*]  Keeping score\n")
+
+        t1.setDaemon(True)
+        t2.setDaemon(True)
+        t3.setDaemon(True)
+        t4.setDaemon(True)
+
+        t1.start()
+        t2.start()
+        t3.start()
+        t4.start()
+
 
     except Exception:
         print(traceback.format_exc())
-        logging.error(traceback.format_exc())
-        sleep(30)
+        pass
+    
+    try:
+
+
+        while True:
+            sleep(1)
+
+    except Exception:
+        print(traceback.format_exc())
+        pass
